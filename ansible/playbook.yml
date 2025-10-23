@@ -1,0 +1,35 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install Docker & Python
+      apt:
+        name:
+          - docker.io
+          - python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Install Docker Compose
+      pip:
+        name: docker-compose
+
+- hosts: manager
+  become: yes
+  tasks:
+    - name: Initialize Swarm
+      shell: docker swarm init --advertise-addr {{ ansible_host }} || true
+
+    - name: Get Join Token
+      shell: docker swarm join-token -q worker
+      register: join_token
+
+    - name: Save join token
+      set_fact:
+        worker_join_token: "{{ join_token.stdout }}"
+
+- hosts: workers
+  become: yes
+  tasks:
+    - name: Join Swarm
+      shell: docker swarm join --token {{ hostvars['manager']['worker_join_token'] }} {{ hostvars['manager']['ansible_host'] }}:2377 || true

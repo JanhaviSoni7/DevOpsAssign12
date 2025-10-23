@@ -1,0 +1,19 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - ITA725
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        run: terraform -chdir=terraform apply -auto-approve
+
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
